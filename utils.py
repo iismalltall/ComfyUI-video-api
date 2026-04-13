@@ -143,19 +143,29 @@ def get_output_video_path(prefix: str = "video", ext: str = ".mp4") -> str:
     except Exception:
         output_dir = os.path.join(os.path.dirname(__file__), "output")
 
-    os.makedirs(output_dir, exist_ok=True)
+    if "/" in prefix or "\\" in prefix:
+        sub_dir = os.path.dirname(prefix)
+        base_prefix = os.path.basename(prefix)
+        scan_dir = os.path.join(output_dir, sub_dir)
+    else:
+        sub_dir = ""
+        base_prefix = prefix
+        scan_dir = output_dir
 
-    # Find next counter
-    pattern = re.compile(rf"{re.escape(prefix)}_(\d+)\D*\..+", re.IGNORECASE)
+    os.makedirs(scan_dir, exist_ok=True)
+
+    pattern = re.compile(rf"{re.escape(base_prefix)}_(\d+)\..+", re.IGNORECASE)
     max_counter = 0
-    for name in os.listdir(output_dir):
+    for name in os.listdir(scan_dir):
         m = pattern.fullmatch(name)
         if m:
             c = int(m.group(1))
             if c > max_counter:
                 max_counter = c
 
-    filename = f"{prefix}_{max_counter + 1:05d}{ext}"
+    filename = f"{base_prefix}_{max_counter + 1:05d}{ext}"
+    if sub_dir:
+        return os.path.join(output_dir, sub_dir, filename)
     return os.path.join(output_dir, filename)
 
 

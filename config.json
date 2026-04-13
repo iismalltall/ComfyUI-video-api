@@ -6,13 +6,11 @@
     ],
     "modes": ["std", "pro"],
     "durations": ["5", "10"],
-    "aspect_ratios": ["16:9", "9:16", "1:1"],
     "defaults": {
       "model_name": "kling-v2-6",
       "mode": "pro",
       "duration": "5",
-      "cfg_scale": 0.5,
-      "aspect_ratio": "16:9"
+      "cfg_scale": 0.5
     }
   },
   "seedance": {

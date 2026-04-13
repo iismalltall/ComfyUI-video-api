@@ -32,7 +32,6 @@ _cfg = get_provider_config("kling")
 MODELS = [m["id"] for m in _cfg.get("models", [])] or ["kling-v2-6"]
 MODES = _cfg.get("modes", ["std", "pro"])
 DURATIONS = _cfg.get("durations", ["5", "10"])
-ASPECT_RATIOS = _cfg.get("aspect_ratios", ["16:9", "9:16", "1:1"])
 _defaults = _cfg.get("defaults", {})
 
 POLL_INTERVAL = 5.0
@@ -70,7 +69,6 @@ def _create_task(
     duration: str,
     negative_prompt: str = "",
     cfg_scale: float = 0.5,
-    aspect_ratio: str = "16:9",
     image_tail_b64: Optional[str] = None,
 ) -> str:
     body: dict = {
@@ -80,7 +78,6 @@ def _create_task(
         "mode": mode,
         "duration": duration,
         "cfg_scale": cfg_scale,
-        "aspect_ratio": aspect_ratio,
     }
     if negative_prompt:
         body["negative_prompt"] = negative_prompt
@@ -168,7 +165,6 @@ class KlingImageToVideo:
                     "FLOAT",
                     {"default": _defaults.get("cfg_scale", 0.5), "min": 0.0, "max": 1.0, "step": 0.05},
                 ),
-                "aspect_ratio": (ASPECT_RATIOS, {"default": _defaults.get("aspect_ratio", "16:9")}),
             },
         }
 
@@ -182,7 +178,6 @@ class KlingImageToVideo:
         image_tail: Optional[torch.Tensor] = None,
         negative_prompt: str = "",
         cfg_scale: float = 0.5,
-        aspect_ratio: str = "16:9",
     ) -> Tuple[str, str, str]:
         access_key = _env("KLING_ACCESS_KEY")
         secret_key = _env("KLING_SECRET_KEY")
@@ -217,7 +212,6 @@ class KlingImageToVideo:
                 duration=duration,
                 negative_prompt=negative_prompt,
                 cfg_scale=cfg_scale,
-                aspect_ratio=aspect_ratio,
                 image_tail_b64=image_tail_b64,
             )
             video_url = _poll_task(base_url, token, task_id)
