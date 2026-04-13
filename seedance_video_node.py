@@ -57,6 +57,7 @@ def _build_content(
         {
             "type": "image_url",
             "image_url": {"url": first_frame_b64},
+            "role": "first_frame",
         },
     ]
     if last_frame_b64:
