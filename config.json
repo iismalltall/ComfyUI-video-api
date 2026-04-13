@@ -18,14 +18,14 @@
   },
   "seedance": {
     "models": [
-      {"id": "seedance-1-0-lite-i2v-250428", "name": "Seedance 1.0 Lite I2V"},
-      {"id": "seedance-1-0-pro-250528", "name": "Seedance 1.0 Pro"},
-      {"id": "seedance-1-5-pro-251215", "name": "Seedance 1.5 Pro"}
+      {"id": "doubao-seedance-1-5-pro-251215", "name": "Seedance 1.5 Pro (火山引擎)"},
+      {"id": "doubao-seedance-1-0-pro-250428", "name": "Seedance 1.0 Pro (火山引擎)"},
+      {"id": "doubao-seedance-1-0-lite-i2v-250219", "name": "Seedance 1.0 Lite I2V (火山引擎)"}
     ],
     "resolutions": ["480p", "720p", "1080p"],
     "ratios": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "adaptive"],
     "defaults": {
-      "model": "seedance-1-0-pro-250528",
+      "model": "doubao-seedance-1-5-pro-251215",
       "duration": 5,
       "resolution": "720p",
       "ratio": "16:9",

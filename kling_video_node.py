@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from .utils import (
     download_video,
     get_output_video_path,
-    pil_to_base64_data_url,
+    pil_to_base64,
     poll_until_complete,
     tensor_to_pils,
 )
@@ -91,9 +91,17 @@ def _create_task(
     url = f"{base_url.rstrip('/')}/videos/image2video"
     print(f"{LOG_PREFIX} Creating task: model={model_name} mode={mode} duration={duration}s")
     resp = requests.post(url, json=body, headers=_headers(token), timeout=60)
-    resp.raise_for_status()
-    data = resp.json()
 
+    if resp.status_code != 200:
+        try:
+            err_body = resp.json()
+        except Exception:
+            err_body = resp.text
+        raise RuntimeError(
+            f"{LOG_PREFIX} HTTP {resp.status_code}: {err_body}"
+        )
+
+    data = resp.json()
     if data.get("code") != 0:
         raise RuntimeError(f"{LOG_PREFIX} API error: {data.get('message', data)}")
 
@@ -188,15 +196,16 @@ class KlingImageToVideo:
         try:
             token = _generate_jwt(access_key, secret_key)
         except Exception as e:
+            print(f"{LOG_PREFIX} JWT generation failed: {e}")
             return ("", "", f"{LOG_PREFIX} JWT generation failed: {e}")
 
         start_pil = tensor_to_pils(image)[0]
-        image_b64 = pil_to_base64_data_url(start_pil)
+        image_b64 = pil_to_base64(start_pil)
 
         image_tail_b64: Optional[str] = None
         if image_tail is not None:
             tail_pil = tensor_to_pils(image_tail)[0]
-            image_tail_b64 = pil_to_base64_data_url(tail_pil)
+            image_tail_b64 = pil_to_base64(tail_pil)
 
         try:
             task_id = _create_task(
@@ -214,12 +223,14 @@ class KlingImageToVideo:
             )
             video_url = _poll_task(base_url, token, task_id)
         except Exception as e:
+            print(f"{LOG_PREFIX} Error: {e}")
             return ("", "", f"{LOG_PREFIX} Error: {e}")
 
         file_path = get_output_video_path(prefix="kling")
         try:
             download_video(video_url, file_path)
         except Exception as e:
+            print(f"{LOG_PREFIX} Video ready but download failed: {e}")
             return (video_url, "", f"{LOG_PREFIX} Video ready but download failed: {e}")
 
         return (video_url, file_path, "Video generated successfully")

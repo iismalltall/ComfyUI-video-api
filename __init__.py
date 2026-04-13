@@ -10,6 +10,13 @@ except ImportError as e:
     print(f"[ComfyUI-video-api] Warning: Could not import SeedanceImageToVideo: {e}")
     SeedanceImageToVideo = None
 
+try:
+    from .video_output_nodes import PreviewVideo, SaveVideo
+except ImportError as e:
+    print(f"[ComfyUI-video-api] Warning: Could not import video output nodes: {e}")
+    PreviewVideo = None
+    SaveVideo = None
+
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
@@ -21,7 +28,18 @@ if SeedanceImageToVideo is not None:
     NODE_CLASS_MAPPINGS["SeedanceImageToVideo"] = SeedanceImageToVideo
     NODE_DISPLAY_NAME_MAPPINGS["SeedanceImageToVideo"] = "Seedance Image to Video"
 
+if PreviewVideo is not None:
+    NODE_CLASS_MAPPINGS["PreviewVideo"] = PreviewVideo
+    NODE_DISPLAY_NAME_MAPPINGS["PreviewVideo"] = "Preview Video"
+
+if SaveVideo is not None:
+    NODE_CLASS_MAPPINGS["SaveVideo"] = SaveVideo
+    NODE_DISPLAY_NAME_MAPPINGS["SaveVideo"] = "Save Video"
+
+WEB_DIRECTORY = "./web"
+
 __all__ = [
     "NODE_CLASS_MAPPINGS",
     "NODE_DISPLAY_NAME_MAPPINGS",
+    "WEB_DIRECTORY",
 ]

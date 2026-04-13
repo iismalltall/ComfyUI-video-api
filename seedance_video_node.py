@@ -26,6 +26,9 @@ load_dotenv(dotenv_path=DOTENV_PATH)
 LOG_PREFIX = "[ComfyUI-Seedance]"
 
 MODELS = [
+    "doubao-seedance-1-5-pro-251215",
+    "doubao-seedance-1-0-pro-250428",
+    "doubao-seedance-1-0-lite-i2v-250219",
     "seedance-1-0-lite-i2v-250428",
     "seedance-1-0-pro-250528",
     "seedance-1-0-pro-fast-251015",
@@ -59,7 +62,6 @@ def _build_content(
         {
             "type": "image_url",
             "image_url": {"url": first_frame_b64},
-            "role": "first_frame",
         },
     ]
     if last_frame_b64:
@@ -96,7 +98,16 @@ def _create_task(
     url = f"{base_url.rstrip('/')}/contents/generations/tasks"
     print(f"{LOG_PREFIX} Creating task: model={model} duration={duration}s resolution={resolution}")
     resp = requests.post(url, json=body, headers=_headers(api_key), timeout=60)
-    resp.raise_for_status()
+
+    if resp.status_code != 200:
+        try:
+            err_body = resp.json()
+        except Exception:
+            err_body = resp.text
+        raise RuntimeError(
+            f"{LOG_PREFIX} HTTP {resp.status_code}: {err_body}"
+        )
+
     data = resp.json()
 
     task_id = data.get("id")
@@ -149,7 +160,7 @@ class SeedanceImageToVideo:
                     "STRING",
                     {"multiline": True, "default": ""},
                 ),
-                "model": (MODELS, {"default": MODELS[1]}),
+                "model": (MODELS, {"default": MODELS[0]}),
             },
             "optional": {
                 "image_tail": ("IMAGE",),
@@ -182,7 +193,7 @@ class SeedanceImageToVideo:
         if not api_key:
             return ("", "", f"{LOG_PREFIX} Error: SEEDANCE_API_KEY not set in .env")
         if not base_url:
-            base_url = "https://ark.ap-southeast.bytepluses.com/api/v3"
+            base_url = "https://ark.cn-beijing.volces.com/api/v3"
 
         start_pil = tensor_to_pils(image)[0]
         first_frame_b64 = pil_to_base64_data_url(start_pil, fmt="png")
@@ -207,12 +218,14 @@ class SeedanceImageToVideo:
             )
             video_url = _poll_task(base_url, api_key, task_id)
         except Exception as e:
+            print(f"{LOG_PREFIX} Error: {e}")
             return ("", "", f"{LOG_PREFIX} Error: {e}")
 
         file_path = get_output_video_path(prefix="seedance")
         try:
             download_video(video_url, file_path)
         except Exception as e:
+            print(f"{LOG_PREFIX} Video ready but download failed: {e}")
             return (video_url, "", f"{LOG_PREFIX} Video ready but download failed: {e}")
 
         return (video_url, file_path, "Video generated successfully")
