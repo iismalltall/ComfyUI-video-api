@@ -12,6 +12,7 @@ import requests
 import torch
 from dotenv import load_dotenv
 
+from .jizhu_reporting import begin_video, report_video_completed, report_video_failed
 from .kling_api import (
     DEFAULT_BASE_URL,
     MODEL_RULES,
@@ -172,16 +173,43 @@ class KlingImageToVideo:
             duration=int(duration),
             audio=audio,
         )
-        task_id = _create_task(base_url, api_key, path, body)
-        video_url = _poll_task(base_url, api_key, task_id)
+        # 参数与图片校验通过后再校验机杼额度，避免无效参数占用额度校验
+        jizhu_client, execution, error = begin_video(
+            model=model_name,
+            provider="kling",
+            duration=duration,
+        )
+        if error:
+            raise RuntimeError(f"{LOG_PREFIX} {error}")
+
+        try:
+            task_id = _create_task(base_url, api_key, path, body)
+            video_url = _poll_task(base_url, api_key, task_id)
+        except Exception:
+            report_video_failed(jizhu_client, execution, model_name, "kling", duration)
+            raise
 
         # 视频已生成但下载失败：仍返回链接，避免丢失已扣费的结果
         file_path = get_output_video_path(prefix="kling")
         try:
             download_video(video_url, file_path)
         except Exception as e:
+            report_video_failed(jizhu_client, execution, model_name, "kling", duration)
             print(f"{LOG_PREFIX} Video ready but download failed: {e}")
             return (video_url, "", f"{LOG_PREFIX} Video ready but download failed: {e}")
+
+        try:
+            report_video_completed(
+                jizhu_client,
+                execution,
+                model_name,
+                "kling",
+                duration,
+                file_path,
+            )
+        except Exception as e:
+            print(f"{LOG_PREFIX} Result reporting failed: {e}")
+            return (video_url, "", f"{LOG_PREFIX} Result reporting failed: {e}")
 
         return {
             "ui": make_video_ui_result(file_path),
